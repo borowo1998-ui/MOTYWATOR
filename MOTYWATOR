@@ -1,0 +1,42 @@
+name: Build APK
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Rozpakuj i przygotuj
+        run: |
+          ls -la
+          for z in *.zip; do unzip -o "$z"; done || true
+          ls -la
+          # Przenieś pliki z rozpakowanego folderu do głównego
+          if [ -d "MotywatorAPK" ]; then
+            cp -r MotywatorAPK/* . 2>/dev/null || true
+            cp -r MotywatorAPK/.* . 2>/dev/null || true
+          fi
+          if [ -d "MotywatorAPK-TELEFON" ]; then
+            cp -r MotywatorAPK-TELEFON/* . 2>/dev/null || true
+          fi
+          rm -rf *.zip MotywatorAPK MotywatorAPK-TELEFON 2>/dev/null || true
+          ls -la
+          echo "--- app folder ---"
+          ls -la app/src/main/java/com/motywator/widget/ || true
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Buduj APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Motywator-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
