@@ -1,26 +1,18 @@
 name: Build APK
-on: [push]
+on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Rozpakuj projekt
+
+      - name: Znajdz projekt i przygotuj
+        id: prep
         run: |
-          unzip -o "MotywatorAPK-TELEFON.zip (3).zip" || unzip -o "MotywatorAPK-TELEFON.zip (7).zip" || unzip -o *.zip
-          mv MotywatorAPK/MotywatorAPK/*. 2>/dev/null || mv MotywatorAPK/*. 2>/dev/null || mv MotywatorAPK-TELEFON/MotywatorAPK/*. 2>/dev/null || true
-          rm -rf MotywatorAPK-TELEFON.zip* MotywatorAPK-TELEFON* MotywatorAPK 2>/dev/null || true
-          ls -la
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-      - uses: android-actions/setup-android@v3
-      - name: Buduj APK
-        run: |
-          chmod +x./gradlew
-         ./gradlew assembleDebug
-      - uses: actions/upload-artifact@v4
-        with:
-          name: Motywator-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          echo "Szukam projektu..."
+          # Rozpakuj ZIPy jesli sa
+          for f in *.zip; do [ -f "$f" ] && unzip -o "$f" || true; done
+          for f in */*.zip; do [ -f "$f" ] && unzip -o "$f" || true; done
+          
+          # Znajdz gdzie jest settings.gradle.kts
+          ROOT=$(find . -name "settings.gradle.kts" -type f | head -1 | xargs dirname 2>/dev/null)
